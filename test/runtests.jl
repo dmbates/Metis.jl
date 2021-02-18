@@ -3,6 +3,7 @@ using Random
 using Test
 using SparseArrays
 import LightGraphs
+import SimpleWeightedGraphs
 
 @testset "Metis.permutation" begin
     Random.seed!(0)
@@ -21,6 +22,21 @@ end
         partition = Metis.partition(G, nparts, alg = alg)
         @test extrema(partition) == (1, nparts)
         @test all(x -> findfirst(==(x), partition) !== nothing, 1:nparts)
+    end
+end
+
+@testset "Metis.partition with edge weights" begin
+    T = LightGraphs.smallgraph(:tutte)
+    G = SimpleWeightedGraphs.SimpleWeightedGraph(LightGraphs.nv(T))
+    for i in 1:LightGraphs.nv(T)
+        for j in LightGraphs.neighbors(T, i)
+            SimpleWeightedGraphs.add_edge!(G, i, j, 1)
+        end
+    end
+    for alg in (:RECURSIVE, :KWAY), nparts in (3, 4)
+        unwpartition = Metis.partition(T, nparts, alg = alg)
+        partition = Metis.partition(G, nparts, alg = alg)
+        @test partition == unwpartition
     end
 end
 
